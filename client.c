@@ -1,5 +1,6 @@
 #if defined (WIN32)
     #include <winsock2.h>
+	#include <unistd.h>
     typedef int socklen_t;
 #elif defined (linux)
     #include <sys/types.h>
@@ -17,7 +18,7 @@
  
 #include <stdio.h>
 #include <stdlib.h>
-#define PORT 23 
+#define PORT 54000 
  
 int main(void)
 {
@@ -30,7 +31,10 @@ int main(void)
  
     SOCKET sock;
     SOCKADDR_IN sin;
- 
+	char buf[280];
+	char message[280];
+	fd_set readfds;
+	
     if(!erreur)
     {
         /* Création de la socket */
@@ -43,10 +47,60 @@ int main(void)
  
         /* Si le client arrive à se connecter */
         if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR)
-            printf("Connexion à %s sur le port %d\n", inet_ntoa(sin.sin_addr), htons(sin.sin_port));
+		{			
+			int bytesIn = recv(sock, buf, 280, 0);
+			buf[bytesIn]=0;
+			printf("%s",buf);			
+			while(1) {				
+                int fd_max = STDIN_FILENO;
+
+				/* Set the bits for the file descriptors you want to wait on. */
+				FD_ZERO(&readfds);
+				FD_SET(STDIN_FILENO, &readfds);
+				FD_SET(sock, &readfds);
+
+				/* The select call needs to know the highest bit you set. */    
+				if( sock > fd_max ) { fd_max = sock; }
+
+				/* Wait for any of the file descriptors to have data. */
+				int socketCount =select(fd_max+1, &readfds, NULL, NULL, NULL);
+				
+				char buffer[10];
+				printf("stdin is ready.\n");
+				read(STDIN_FILENO, buffer, 10);
+				printf(buffer);
+				printf("%d",socketCount);
+				if(socketCount>0)
+				{
+				if(FD_ISSET(sock,&readfds))
+				{
+					printf("%d",socketCount);
+					printf("File Descriptor %d is ready to read!", sock);
+					int bytesIn = recv(sock, message, 280, 0);
+					message[bytesIn]=0;
+					printf(message);
+				}
+				if(FD_ISSET(STDIN_FILENO,&readfds))
+				{
+					printf("%d",socketCount);
+					char buffer[10];
+					printf("stdin is ready.\n");
+					read(STDIN_FILENO, buffer, 10);
+					printf(buffer);
+				}
+				  
+				}
+				
+				
+				/*printf("Enter a message: ");
+				fgets(message, 280, stdin);
+				send(sock, message, strlen(message), 0);*/
+			}
+		}
         else
+		{
             printf("Impossible de se connecter\n");
- 
+		}
         /* On ferme la socket précédemment ouverte */
         closesocket(sock);
  
