@@ -18,7 +18,7 @@
  
 #include <stdio.h>
 #include <stdlib.h>
-#define PORT 54000 
+#define PORT 23 
  
 int main(void)
 {
@@ -65,13 +65,6 @@ int main(void)
 				/* Wait for any of the file descriptors to have data. */
 				int socketCount =select(fd_max+1, &readfds, NULL, NULL, NULL);
 				
-				char buffer[10];
-				printf("stdin is ready.\n");
-				read(STDIN_FILENO, buffer, 10);
-				printf(buffer);
-				printf("%d",socketCount);
-				if(socketCount>0)
-				{
 				if(FD_ISSET(sock,&readfds))
 				{
 					printf("%d",socketCount);
@@ -89,12 +82,8 @@ int main(void)
 					printf(buffer);
 				}
 				  
-				}
 				
 				
-				/*printf("Enter a message: ");
-				fgets(message, 280, stdin);
-				send(sock, message, strlen(message), 0);*/
 			}
 		}
         else
