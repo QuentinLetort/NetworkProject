@@ -64,6 +64,10 @@ int main(void)
 
 				/* Wait for any of the file descriptors to have data. */
 				int socketCount =select(fd_max+1, &readfds, NULL, NULL, NULL);
+
+				if(socketCount ==-1)
+					perror("Select()");
+				
 				
 				if(FD_ISSET(sock,&readfds))
 				{
@@ -81,8 +85,7 @@ int main(void)
 					read(STDIN_FILENO, buffer, 10);
 					printf(buffer);
 				}
-				  
-				
+				 
 				
 			}
 		}
