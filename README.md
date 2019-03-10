@@ -2,7 +2,7 @@
 
 ## Usage
 
-###Windows
+### Windows
 
 Open the command prompt, change directory to the current one and launch the serveur by using:
 ```sh
