@@ -18,8 +18,47 @@
  
 #include <stdio.h>
 #include <stdlib.h>
-#define PORT 23 
- 
+#include <pthread.h>
+
+#define PORT 23
+#define MSG_SIZE 280
+
+void * receive_message(void * sockfd) {
+	SOCKET sock=(SOCKET)sockfd;
+    char message[MSG_SIZE];
+    while (1) {
+        int bytesIn = recv(sock, message, MSG_SIZE, 0);
+		message[bytesIn]=0;
+		if(bytesIn<=0)
+		{		
+			printf("\rServeur deconnecte\n");			
+			break;			
+		}
+		else
+		{
+			printf("\r%s\n", message);  
+			printf("\r%s", "> ");
+			fflush(stdout);
+		}			
+		
+    }
+	return 0;
+}
+
+void * send_message(void * sockfd) {
+	SOCKET sock=(SOCKET)sockfd;
+    char message[MSG_SIZE];
+    while (1) {
+		printf("\r%s", "> ");
+		fflush(stdout);
+		fgets(message, MSG_SIZE, stdin);
+		message[strlen(message)-1]=0;
+		send(sock, message, strlen(message), 0);		
+	}
+	return 0;
+}
+
+
 int main(void)
 {
     #if defined (WIN32)
@@ -31,9 +70,7 @@ int main(void)
  
     SOCKET sock;
     SOCKADDR_IN sin;
-	char buf[280];
-	char message[280];
-	fd_set readfds;
+	char buf[50];
 	
     if(!erreur)
     {
@@ -44,50 +81,23 @@ int main(void)
         sin.sin_addr.s_addr = inet_addr("127.0.0.1");
         sin.sin_family = AF_INET;
         sin.sin_port = htons(PORT);
- 
+		
         /* Si le client arrive à se connecter */
         if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR)
 		{			
-			int bytesIn = recv(sock, buf, 280, 0);
+			int bytesIn = recv(sock, buf, 50, 0);
 			buf[bytesIn]=0;
-			printf("%s",buf);			
-			while(1) {				
-                int fd_max = STDIN_FILENO;
-
-				/* Set the bits for the file descriptors you want to wait on. */
-				FD_ZERO(&readfds);
-				FD_SET(STDIN_FILENO, &readfds);
-				FD_SET(sock, &readfds);
-
-				/* The select call needs to know the highest bit you set. */    
-				if( sock > fd_max ) { fd_max = sock; }
-
-				/* Wait for any of the file descriptors to have data. */
-				int socketCount =select(fd_max+1, &readfds, NULL, NULL, NULL);
-
-				if(socketCount ==-1)
-					perror("Select()");
-				
-				
-				if(FD_ISSET(sock,&readfds))
-				{
-					printf("%d",socketCount);
-					printf("File Descriptor %d is ready to read!", sock);
-					int bytesIn = recv(sock, message, 280, 0);
-					message[bytesIn]=0;
-					printf(message);
-				}
-				if(FD_ISSET(STDIN_FILENO,&readfds))
-				{
-					printf("%d",socketCount);
-					char buffer[10];
-					printf("stdin is ready.\n");
-					read(STDIN_FILENO, buffer, 10);
-					printf(buffer);
-				}
-				 
-				
+			printf("%s",buf);
+			pthread_t thread[2];
+			if (pthread_create(&thread[0], NULL, &send_message, (void *)sock) != 0) {
+				printf ("Impossible de créer le thread send\n");				
 			}
+			if (pthread_create(&thread[1], NULL, &receive_message, (void *)sock) != 0) {
+				printf ("Impossible de créer le thread recv\n");
+			}
+			
+			pthread_join (thread[1], NULL);
+
 		}
         else
 		{

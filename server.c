@@ -27,6 +27,8 @@ typedef struct sockaddr SOCKADDR;
 #include <stdio.h>
 #include <stdlib.h> 
 #include <stdbool.h>
+#include <string.h>
+
 
 #define PORT 23
 
@@ -123,13 +125,13 @@ int main(void)
                             {
                                 // Accept a new connection
                                 SOCKET client = accept(listening, NULL, NULL);
-                                printf("Client %d arrives on the chat server\n", client);
+                                printf("Client %d arrive sur le chat\n", client);
 
                                 // Add the new connection to the list of connected clients
                                 FD_SET(client, &master);
 
                                 // Send a welcome message to the connected client
-                                char * welcomeMsg = "Welcome to the Chat Server!\r\n";
+                                char * welcomeMsg = "Bienvenue sur le chat!\r\n";
                                 send(client, welcomeMsg, strlen(welcomeMsg), 0);
                             }
                             else // It's an inbound message
@@ -150,22 +152,7 @@ int main(void)
                                     }
                                     else
                                     {
-                                        // Check to see if it's a command. \quit kills the server
-                                        /*if (buf[0] == '\\')
-                                        {
-                                            // Is the command quit? 
-                                            string cmd = string(buf, bytesIn);
-                                            if (cmd == "\\quit")
-                                            {
-                                                running = false;
-                                                break;
-                                            }
-
-                                            // Unknown command
-                                            continue;
-                                        }*/
-
-                                        printf("SOCKET:%d> %s\n",clsock,buf);
+                                        printf("USER:%d> %s\n",clsock,buf);
                                         // Send message to other clients, and definiately NOT the listening socket                        
                                         for (int i = 0; i < master.fd_count; i++)
                                         {
