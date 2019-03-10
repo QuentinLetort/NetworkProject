@@ -152,18 +152,69 @@ int main(void)
                                     }
                                     else
                                     {
-                                        printf("USER:%d> %s\n",clsock,buf);
-                                        // Send message to other clients, and definiately NOT the listening socket                        
-                                        for (int i = 0; i < master.fd_count; i++)
-                                        {
-                                            SOCKET outSock = master.fd_array[i];
-                                            if (outSock != listening && outSock != clsock)
-                                            {                               
-                                                char strOut[320];
-                                                sprintf(strOut,"SOCKET:%d> %s",clsock,buf);
-                                                send(outSock, strOut, strlen(strOut), 0);
-                                            }
-                                        }
+										if(buf[0]=='#')
+										{
+											char * cmd;
+											cmd=(buf+1);
+											if(cmd=="exit")
+											{
+												closesocket(clsock);
+												printf("Client %d quit the chat server\n", clsock);
+												FD_CLR(clsock, &master);
+											}
+											else if(cmd=="help")
+											{
+												//TODO: show commands
+											}
+											else if(cmd=="listU")
+											{
+												//TODO: list user on the server
+											}
+											else if(cmd=="listF")
+											{
+												//TODO: list files of server 
+											}
+											else if(cmd=="trfU")
+											{
+												//TODO: upload a file to the server
+											}
+											else if(cmd=="trfD")
+											{
+												//TODO: Download a file from the server
+											}
+											else if(cmd=="private")
+											{
+												//TODO: commute to private conversation with user 
+											}
+											else if(cmd=="public")
+											{
+												//TODO: commute to public if client was in private conversation
+											}
+											else if (cmd=="ring")
+											{
+												//TODO: send to user concerned that a client ring him and to client if user is connect
+											}
+											else
+											{
+												//TODO: send to client>cmd incorrect
+											}
+											printf("%s:%d",cmd,strlen(cmd));
+										}
+										else
+										{
+											printf("USER:%d> %s\n",clsock,buf);
+											// Send message to other clients, and definiately NOT the listening socket                        
+											for (int i = 0; i < master.fd_count; i++)
+											{
+												SOCKET outSock = master.fd_array[i];
+												if (outSock != listening && outSock != clsock)
+												{                               
+													char strOut[320];
+													sprintf(strOut,"USER:%d> %s",clsock,buf);
+													send(outSock, strOut, strlen(strOut), 0);
+												}
+											}
+										}
                                     }
 
                                 }
