@@ -137,42 +137,72 @@ int main(void)
                             else // It's an inbound message
                             {
                                 char buf[280];
-                                ZeroMemory(buf, 280);
 
                                 // Receive message
                                 int bytesIn = recv(clsock, buf, 280, 0);
+								buf[bytesIn]=0;
                                 if(!(buf[0]=='\r'&& buf[1]=='\n' && bytesIn==2))
                                 {
                                     if (bytesIn <= 0)
                                     {
                                         // Drop the client
                                         closesocket(clsock);
-                                        printf("Client %d quit the chat server\n", clsock);
+                                        printf("Client %d quitte le chat\n", clsock);
                                         FD_CLR(clsock, &master);
                                     }
                                     else
                                     {
 										if(buf[0]=='#')
 										{
-											char * cmd;
-											cmd=(buf+1);
-											if(cmd=="exit")
+											char * str = (buf+1);
+											char delim[] = " ";
+
+											char *cmd = strtok(str, delim);										
+											printf("%s",cmd);
+											if(strcmp(cmd,"exit")==0)
 											{
+												send(clsock, "A bientôt", 10, 0);
 												closesocket(clsock);
-												printf("Client %d quit the chat server\n", clsock);
+												printf("Client %d quitte le chat\n", clsock);
 												FD_CLR(clsock, &master);
 											}
 											else if(cmd=="help")
 											{
 												//TODO: show commands
 											}
-											else if(cmd=="listU")
+											else if(strcmp(cmd,"listU")==0)
 											{
-												//TODO: list user on the server
+												char strOut[]="List users:\n";
+												for (int i = 0; i < master.fd_count; i++)
+												{
+													SOCKET sock = master.fd_array[i];
+													if (sock != listening && sock != clsock)
+													{                               
+														char strUser[30];
+														sprintf(strUser,"-User: %d\n",sock);
+														strcat(strOut, strUser);													
+													}
+												}
+												if(master.fd_count==2)
+												{
+													strcat(strOut, "Aucun utilisateur actuellement en ligne\n");
+												}
+												strOut[strlen(strOut)-1]=0;
+												send(clsock, strOut, strlen(strOut), 0);
 											}
-											else if(cmd=="listF")
+											else if(strcmp(cmd,"listF")==0)
 											{
+												char * user = strtok(NULL, delim);
+												if(user != NULL)
+												{
+													printf("%s\n", user);													
+												}
+												else 
+												{
+													printf("'%s'\n", "Pas d'utilisateurs");													
+												}
 												//TODO: list files of server 
+												//Without a renseigned user, search file on the server 
 											}
 											else if(cmd=="trfU")
 											{
@@ -198,7 +228,6 @@ int main(void)
 											{
 												//TODO: send to client>cmd incorrect
 											}
-											printf("%s:%d",cmd,strlen(cmd));
 										}
 										else
 										{
