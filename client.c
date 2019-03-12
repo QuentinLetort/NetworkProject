@@ -24,7 +24,7 @@
 #define MSG_SIZE 280
 
 void * receive_message(void * sockfd) {
-	SOCKET sock=(SOCKET)sockfd;
+	SOCKET sock=(intptr_t)sockfd;
     char message[MSG_SIZE];
     while (1) {
         int bytesIn = recv(sock, message, MSG_SIZE, 0);
@@ -46,7 +46,7 @@ void * receive_message(void * sockfd) {
 }
 
 void * send_message(void * sockfd) {
-	SOCKET sock=(SOCKET)sockfd;
+	SOCKET sock=(intptr_t)sockfd;
     char message[MSG_SIZE];
     while (1) {
 		printf("\r%s", "> ");
@@ -89,10 +89,10 @@ int main(void)
 			buf[bytesIn]=0;
 			printf("%s",buf);
 			pthread_t thread[2];
-			if (pthread_create(&thread[0], NULL, &send_message, (void *)sock) != 0) {
+			if (pthread_create(&thread[0], NULL, &send_message, (void *)(intptr_t)sock) != 0) {
 				printf ("Impossible de créer le thread send\n");				
 			}
-			if (pthread_create(&thread[1], NULL, &receive_message, (void *)sock) != 0) {
+			if (pthread_create(&thread[1], NULL, &receive_message, (void *)(intptr_t)sock) != 0) {
 				printf ("Impossible de créer le thread recv\n");
 			}
 			

@@ -193,7 +193,9 @@ int main(void)
 											}
 											else if(strcmp(cmd,"listU")==0)
 											{
-												char strOut[]="List users:\n";
+												char strOut[300];
+												strOut[0]=0;
+												strcat(strOut, "List users:\n");
 												int compteur=0;
 												for (int j = 0; j < max_clients; j++)
 												{
@@ -208,35 +210,12 @@ int main(void)
 												}
 												if(compteur==0)
 												{
-													printf("%d",compteur);
 													strcat(strOut, "Aucun utilisateur actuellement en ligne\n");
 												}
 												strOut[strlen(strOut)-1]=0;
 												send(sd, strOut, strlen(strOut), 0);
 											}
-											else if(strcmp(cmd,"listF")==0)
-											{
-												char strOut[]="List users:\n";
-												int compteur=0;
-												for (int j = 0; j < max_clients; j++)
-												{
-													SOCKET sock = client_socket[j];
-													if (sock != listening && sock != sd && sock>0)
-													{                               
-														char strUser[30];
-														sprintf(strUser,"User: %d\n",sock);
-														strcat(strOut, strUser);
-														compteur++;
-													}
-												}
-												if(compteur==0)
-												{
-													printf("%d",compteur);
-													strcat(strOut, "Aucun utilisateur actuellement en ligne\n");
-												}
-												strOut[strlen(strOut)-1]=0;
-												send(sd, strOut, strlen(strOut), 0);
-											}
+											
 											//TODO: list files of server 
 												//Without a renseigned user, search file on the server 
 											
