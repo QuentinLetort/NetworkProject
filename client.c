@@ -1,5 +1,6 @@
 #if defined (WIN32)
     #include <winsock2.h>
+	#include <unistd.h>
     typedef int socklen_t;
 #elif defined (linux)
     #include <sys/types.h>
@@ -17,8 +18,47 @@
  
 #include <stdio.h>
 #include <stdlib.h>
-#define PORT 23 
- 
+#include <pthread.h>
+
+#define PORT 23
+#define MSG_SIZE 280
+
+void * receive_message(void * sockfd) {
+	SOCKET sock=(intptr_t)sockfd;
+    char message[MSG_SIZE];
+    while (1) {
+        int bytesIn = recv(sock, message, MSG_SIZE, 0);
+		message[bytesIn]=0;
+		if(bytesIn<=0)
+		{		
+			printf("\rServeur deconnecte\n");			
+			break;			
+		}
+		else
+		{
+			printf("\r%s\n", message);  
+			printf("\r%s", "> ");
+			fflush(stdout);
+		}			
+		
+    }
+	return 0;
+}
+
+void * send_message(void * sockfd) {
+	SOCKET sock=(intptr_t)sockfd;
+    char message[MSG_SIZE];
+    while (1) {
+		printf("\r%s", "> ");
+		fflush(stdout);
+		fgets(message, MSG_SIZE, stdin);
+		message[strlen(message)-1]=0;
+		send(sock, message, strlen(message), 0);		
+	}
+	return 0;
+}
+
+
 int main(void)
 {
     #if defined (WIN32)
@@ -30,7 +70,8 @@ int main(void)
  
     SOCKET sock;
     SOCKADDR_IN sin;
- 
+	char buf[50];
+	
     if(!erreur)
     {
         /* Création de la socket */
@@ -40,13 +81,28 @@ int main(void)
         sin.sin_addr.s_addr = inet_addr("127.0.0.1");
         sin.sin_family = AF_INET;
         sin.sin_port = htons(PORT);
- 
+		
         /* Si le client arrive à se connecter */
         if(connect(sock, (SOCKADDR*)&sin, sizeof(sin)) != SOCKET_ERROR)
-            printf("Connexion à %s sur le port %d\n", inet_ntoa(sin.sin_addr), htons(sin.sin_port));
+		{			
+			int bytesIn = recv(sock, buf, 50, 0);
+			buf[bytesIn]=0;
+			printf("%s",buf);
+			pthread_t thread[2];
+			if (pthread_create(&thread[0], NULL, &send_message, (void *)(intptr_t)sock) != 0) {
+				printf ("Impossible de créer le thread send\n");				
+			}
+			if (pthread_create(&thread[1], NULL, &receive_message, (void *)(intptr_t)sock) != 0) {
+				printf ("Impossible de créer le thread recv\n");
+			}
+			
+			pthread_join (thread[1], NULL);
+
+		}
         else
+		{
             printf("Impossible de se connecter\n");
- 
+		}
         /* On ferme la socket précédemment ouverte */
         closesocket(sock);
  
