@@ -17,9 +17,9 @@
     #define SOCKET_ERROR -1
     #define closesocket(s) close (s)
 
-typedef int SOCKET;
-typedef struct sockaddr_in SOCKADDR_IN;
-typedef struct sockaddr SOCKADDR;
+	typedef int SOCKET;
+	typedef struct sockaddr_in SOCKADDR_IN;
+	typedef struct sockaddr SOCKADDR;
 
 #endif
 
@@ -97,18 +97,7 @@ int main(void)
 
                     while (running)
                     {
-                    // Make a copy of the master file descriptor set, this is SUPER important because
-                    // the call to select() is _DESTRUCTIVE_. The copy only contains the sockets that
-                    // are accepting inbound connection requests OR messages. 
-
-                    // E.g. You have a server and it's master file descriptor set contains 5 items;
-                    // the listening socket and four clients. When you pass this set into select(), 
-                    // only the sockets that are interacting with the server are returned. Let's say
-                    // only one client is sending a message at that time. The contents of 'copy' will
-                    // be one socket. You will have LOST all the other sockets.
-
-                    // SO MAKE A COPY OF THE MASTER LIST TO PASS INTO select() !!!
-
+                    
                         fd_set copy = master;
 
                          // See who's talking to us
