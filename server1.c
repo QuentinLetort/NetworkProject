@@ -206,11 +206,11 @@ int main(void)
                                                              "#listU : renvoie la liste des autres utilisateurs connectes (autres clients).\n"
                                                              "         Si il n'y en a aucun, le serveur renvoie : 'Aucun utilisateur actuellement en ligne.'\n"
                                                              "#listF : renvoie la liste des fichiers presents sur le serveur.\n"
-                                                             "#trfU<> : permet de telecharger un fichier sur le serveur en mettant le nom de ce fichier a la place des <>.\n"
-                                                             "#trfD<> : permet de tetecharger un fichier depuis le serveur en mettant le nom de ce fichier a la place des <>.\n"
-                                                             "#private<> : permet d'activer la conversation prive avec un autre utilisateur. Pour se faire, il faut renseigner le nom de cet autre utilisateur a la place des <>.\n"
+                                                             "#trfU <> : permet de telecharger un fichier sur le serveur en mettant le nom de ce fichier a la place des <>.\n"
+                                                             "#trfD <> : permet de tetecharger un fichier depuis le serveur en mettant le nom de ce fichier a la place des <>.\n"
+                                                             "#private <> : permet d'activer la conversation prive avec un autre utilisateur. Pour se faire, il faut renseigner le nom de cet autre utilisateur a la place des <>.\n"
                                                              "#public : permet de repasser la conversation en mode publique si elle etait en prive.\n"
-                                                             "#ring<> : suivi du nom de l'utilisateur concerne a la place des <> agit comme une commande ping, et permet de savoir si l'autre utilisateur est connecte.\n"
+                                                             "#ring <> : suivi du nom de l'utilisateur concerne a la place des <> agit comme une commande ping, et permet de savoir si l'autre utilisateur est connecte.\n"
                                                              "Si la commande n'est pas reconnu, un message d'erreur sera renvoye.";
                                                 send(sd, help, strlen(help), 0);
 											}
@@ -308,10 +308,55 @@ int main(void)
 											else if (strcmp(cmd,"ring")==0)
 											{
 												//TODO: send to user concerned that a client ring him and to client if user is connect
+
+												char * user = strtok(NULL, delim);
+
+												if(user != NULL)
+												{
+													int usertoring = atoi(user);
+													bool found = false;
+													for (int j = 0; j < max_clients; j++)
+													{
+														if(client_socket[j].client_name==usertoring)
+														{
+															found = true;
+															//envoyer le ring
+
+															char validation[300];
+															sprintf(validation,"l'utilisateur %d est cennecte et a recu le ring.\n",usertoring);
+															send(sd, validation, strlen(validation),0);
+
+															char ringsent[300];
+															sprintf(ringsent,"l'utilisateur %d vous a envoye un ring.\n",sd);
+															send(usertoring, ringsent, strlen(ringsent),0);
+
+														}
+													}
+													if(!found)
+													{
+														//renvoyre que le client n'est pas connecté
+														char *notfound = "L'utilisateur que vous essayez de sonner n'est pas connecte.\n";
+
+														send(sd, notfound, strlen(notfound), 0);
+													}
+													printf("USER:%d> envoie un ring a %d\n",sd,usertoring);
+												}
+												else
+												{
+													char *error = "Veuillez specifier l'utilisateur que vous voulez sonner.\n";
+
+													send(sd, error, strlen(error), 0);
+												}
+												
+
 											}
 											else
 											{
 												//TODO: send to client>cmd incorrect
+												char *error = "la commande specifie n'est pas reconnu. Veuillez utiliser la commande #help pour plus d'informations\n";
+
+												send(sd, error, strlen(error), 0);
+
 											}											
 										}
 										else
@@ -347,7 +392,7 @@ int main(void)
 											else
 											{
 												int client_private = this_client.client_P;
-												printf("USER:%d> en communication prive avec %d\n",client_private);
+												printf("USER:%d> en communication prive avec %d\n",sd,client_private);
 												//Envoie le message au client concerné par le private
 												for (int j = 0; j < max_clients; j++)
 												{
