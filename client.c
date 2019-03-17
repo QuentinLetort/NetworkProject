@@ -37,16 +37,20 @@ void * receive_message(void * sockfd) {
 		message[bytesIn]=0;
 		if (strcmp(message, INCOMING_FILE) == 0) {
 			// on reçoit un fichier
+			send(sock, "ok", 5,0);
 			char file_size[FILE_SIZE_CHAR];
 			char file_name[NAME_SIZE];
-
-			int bytesIn1=recv(sock, file_size, FILE_SIZE_CHAR,0);
 			
+			int bytesIn1=recv(sock, file_size, FILE_SIZE_CHAR,0);
+			send(sock, "ok", 5,0);
+
 			file_size[bytesIn1]=0;
 			printf("\rTaille du fichier: %s\n", file_size);
 
 			
 			int bytesIn2=recv(sock, file_name, NAME_SIZE, 0);
+			send(sock, "ok", 5,0);
+
 			file_name[bytesIn2]=0;
 			printf("%s fait %s octets\n", file_name, file_size);
 

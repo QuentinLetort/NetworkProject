@@ -229,9 +229,14 @@ void dealWithCommand(char * str, client * ptr_client, int listening, client * cl
 				name_sizeStr[strlen(name_sizeStr)-1]=0;
 				fileName[strlen(fileName)]=0;
 				send(sd, INCOMING_FILE, sizeof(INCOMING_FILE), 0);  // on envoit la chaine de contrôle indiquand le début d'un fichier
+
+				char ok[5];
+				recv(sd, ok, 5, 0);
 				send(sd, file_sizeStr, strlen(file_sizeStr), 0);               // on envoit la taille du ficher
+				recv(sd, ok, 5, 0);
 				send(sd, fileName, strlen(fileName), 0);            // on envoit le nom du fichier
-				
+				recv(sd, ok, 5, 0);
+
 				char buffer[BUFFER_SIZE];
 				int nb=BUFFER_SIZE;
 				int compteur=1;
