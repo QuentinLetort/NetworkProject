@@ -19,8 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
-#define PORT 23
+#include <string.h>
+#define PORT 8080
 #define MSG_SIZE 280
 
 void * receive_message(void * sockfd) {

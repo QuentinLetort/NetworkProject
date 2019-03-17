@@ -28,7 +28,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define PORT 23
+#define PORT 8080
 typedef struct client
 {
 	int client_name;
