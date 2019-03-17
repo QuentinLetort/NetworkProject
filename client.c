@@ -53,7 +53,8 @@ void * send_message(void * sockfd) {
 		fflush(stdout);
 		fgets(message, MSG_SIZE, stdin);
 		message[strlen(message)-1]=0;
-		send(sock, message, strlen(message), 0);		
+		send(sock, message, strlen(message), 0);	
+		message[0]=0;
 	}
 	return 0;
 }
