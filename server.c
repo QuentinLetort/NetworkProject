@@ -1,6 +1,7 @@
 //Fichier standard au sytème d'exploitation (windows ou linux)
 #if defined (WIN32)
     #include <winsock2.h>
+
     typedef int socklen_t;
     //stocke la taille d'une structure de type sockaddr_in
 
@@ -11,6 +12,8 @@
     #include <netinet/in.h>
     #include <arpa/inet.h>
     #include <unistd.h>
+	#include <sys/sendfile.h>
+
 
     #define INVALID_SOCKET -1
     #define SOCKET_ERROR -1
@@ -27,8 +30,17 @@
 #include <stdlib.h> 
 #include <stdbool.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <fcntl.h>
 
 #define PORT 8080
+#define INCOMING_FILE "INCOMING-FILE"
+#define NAME_SIZE 30
+#define FILE_SIZE_CHAR 30 //le nom et la taille max d'un fichier ne doivent pas exceder 30 caracteres
+#define BUFFER_SIZE 1024
+
 typedef struct client
 {
 	int client_name;
@@ -107,6 +119,7 @@ client findClient(int socket, client * clients,int max_clients)
 	}
 	return res;
 }
+
 void dealWithCommand(char * str, client * ptr_client, int listening, client * clients, int max_clients)
 {		
 	int sd= (*ptr_client).client_name;
@@ -161,8 +174,25 @@ void dealWithCommand(char * str, client * ptr_client, int listening, client * cl
 	}
 	else if(strcmp(cmd,"listF")==0)
 	{
-	//TODO: list files of server 
-	//Without a renseigned user, search file on the server 
+		char strOut [1024];
+		strOut[0]=0;
+		DIR *d;
+		struct dirent *dir;
+		d = opendir(".");
+		strcat(strOut, "List fichiers:\n");
+        if (d)
+		{
+			while ((dir = readdir(d)) != NULL)
+			{
+				char file[100];
+				sprintf(file,"%s\n", dir->d_name);
+				strcat(strOut,file);				
+				file[0]=0;
+			}
+			strOut[strlen(strOut)-1]=0;
+			send(sd, strOut, strlen(strOut), 0);
+			closedir(d);
+        }
 	}
 	else if(strcmp(cmd,"trfU")==0)
 	{
@@ -170,7 +200,57 @@ void dealWithCommand(char * str, client * ptr_client, int listening, client * cl
 	}
 	else if(strcmp(cmd,"trfD")==0)
 	{
-		//TODO: Download a file from the server
+		char *notExist = "This file does not exist.";
+        char *fileName = strtok(NULL, delim);
+		if(fileName!=NULL)
+		{
+			struct stat	obj;  
+			if(stat(fileName, &obj) < 0) 
+			{      
+				char *error = "Le fichier renseigne ne se trouve pas sur le serveur. Listez les fichiers grace a #listF";
+				send(sd, error, strlen(error), 0);					
+			}
+			else
+			{
+				printf("User %d telecharge le fichier %s\n", sd,fileName);
+				int file_size;
+				FILE * file;
+				file_size =  obj.st_size;                        // file_size a maintenant la taile du fichier
+				file= fopen(fileName,"rb+");              // on ouvre le fichier en lecture binaire
+				if (file == NULL)
+				{
+					printf("Erreur en ouvrant le fichier.\n");				  
+				}			   
+				char file_sizeStr[FILE_SIZE_CHAR];
+				sprintf(file_sizeStr,"%d\n", file_size);
+				char name_sizeStr[NAME_SIZE];
+				sprintf(name_sizeStr,"%d\n", strlen(fileName));
+				file_sizeStr[strlen(file_sizeStr)-1]=0;
+				name_sizeStr[strlen(name_sizeStr)-1]=0;
+				fileName[strlen(fileName)]=0;
+				send(sd, INCOMING_FILE, sizeof(INCOMING_FILE), 0);  // on envoit la chaine de contrôle indiquand le début d'un fichier
+				send(sd, file_sizeStr, strlen(file_sizeStr), 0);               // on envoit la taille du ficher
+				send(sd, fileName, strlen(fileName), 0);            // on envoit le nom du fichier
+				
+				char buffer[BUFFER_SIZE];
+				int nb=BUFFER_SIZE;
+				int compteur=1;
+				while(nb == BUFFER_SIZE) {
+					nb=fread(buffer ,1,BUFFER_SIZE,file);					
+					send(sd, buffer, nb, 0);
+					compteur++;
+				}
+				fclose(file);
+				printf("Envoi du fichier termine\n");
+			}
+			
+		}
+		else 
+		{
+			char *error = "Veuillez specifier le nom du fichier que vous souhaitez telecharger.";
+			send(sd, error, strlen(error), 0);												
+		}
+       
 	}
 	else if(strcmp(cmd,"private")==0)
 	{
@@ -193,8 +273,7 @@ void dealWithCommand(char * str, client * ptr_client, int listening, client * cl
 			{
 				char *error = "Veuillez specifier un utilisateur actuellement connecte.";
 				send(sd, error, strlen(error), 0);
-			}
-															
+			}															
 		}
 		else 
 		{

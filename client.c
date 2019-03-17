@@ -20,8 +20,14 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <dirent.h>
+
 #define PORT 8080
 #define MSG_SIZE 280
+#define INCOMING_FILE "INCOMING-FILE"
+#define NAME_SIZE 30
+#define FILE_SIZE_CHAR 30 //le nom et la taille max d'un fichier ne doivent pas exceder 30 caracteres
+#define BUFFER_SIZE 1024
 
 void * receive_message(void * sockfd) {
 	SOCKET sock=(intptr_t)sockfd;
@@ -29,19 +35,62 @@ void * receive_message(void * sockfd) {
     while (1) {
         int bytesIn = recv(sock, message, MSG_SIZE, 0);
 		message[bytesIn]=0;
-		if(bytesIn<=0)
-		{		
-			printf("\rServeur deconnecte\n");			
-			break;			
+		if (strcmp(message, INCOMING_FILE) == 0) {
+			// on reçoit un fichier
+			char file_size[FILE_SIZE_CHAR];
+			char file_name[NAME_SIZE];
+
+			int bytesIn1=recv(sock, file_size, FILE_SIZE_CHAR,0);
+			
+			file_size[bytesIn1]=0;
+			printf("\rTaille du fichier: %s\n", file_size);
+
+			
+			int bytesIn2=recv(sock, file_name, NAME_SIZE, 0);
+			file_name[bytesIn2]=0;
+			printf("%s fait %s octets\n", file_name, file_size);
+
+			char * filenameNewFile="download.jpg";
+			FILE * local_file = fopen(filenameNewFile, "wb+");
+			if(local_file == NULL) {
+				printf("Erreur à l'ouverture du nouveau fichier");
+			}
+
+			// recevoir fichier
+			char buffer[BUFFER_SIZE];
+			int r = 0, w = 0, total = 0;
+			
+			while(total < atoi(file_size)) {
+				r = recv(sock, buffer, BUFFER_SIZE, 0);
+				w = fwrite(buffer, 1, r, local_file);
+				total += r;
+				if(w < 0) {
+					printf("Erreur lors de l'ecriture du fichier");					
+					fclose(local_file);					
+				}
+			}
+			printf("Fichier telecharge\n");
+			fclose(local_file);
+			printf("\r%s", "> ");
+			fflush(stdout);
+			message[0]=0;
 		}
 		else
 		{
-			printf("\r%s\n", message);  
-			printf("\r%s", "> ");
-			fflush(stdout);
-		}			
+			if(bytesIn<=0)
+			{		
+				printf("\rServeur deconnecte\n");			
+				break;			
+			}
+			else
+			{
+				printf("\r%s\n", message);  
+				printf("\r%s", "> ");
+				fflush(stdout);
+			}			
 		
-    }
+		}
+	}
 	return 0;
 }
 
